@@ -74,8 +74,10 @@ export class GamepadProcessor {
     }
 
     const leftEvent = this.leftProcessor.process(leftSample);
+    let leftSlottedThisTick = false;
 
     if (leftEvent) {
+      leftSlottedThisTick = true;
       events.push({
         type: 'slot_fired',
         stick: 'left',
@@ -88,7 +90,8 @@ export class GamepadProcessor {
       this.leftActive = true;
     }
 
-    if (this.leftActive && !leftSample.active) {
+    // Не сабмитить в тот же тик, что и slot (release sub 0 иначе сразу печатает «Л», а не ждёт гласную)
+    if (this.leftActive && !leftSample.active && !leftSlottedThisTick) {
       const text = this.composer.onLeft({ type: 'neutral' });
       if (text) events.push({ type: 'char', text });
       this.leftActive = false;

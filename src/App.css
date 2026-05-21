@@ -120,6 +120,10 @@
   opacity: 0.85;
 }
 
+.stick-pad__letter--gesture {
+  font-size: 14px;
+}
+
 .stick-pad__letter--active {
   color: var(--accent);
   transform: translate(-50%, -50%) scale(1.15);

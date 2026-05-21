@@ -4,15 +4,17 @@ import { CARDINAL_ANGLES, getCardinalIndex, getSubSlot } from './utils/newAngles
 import {
   CARDINAL_RELEASE_SLOTS,
   polarToXY,
-  subSlotAngle,
+  subSlotGestureAngle,
 } from './utils/stickLayout';
 
-const SIZE = 220;
+const SIZE = 240;
 const R = SIZE / 2;
-const LETTER_R = R - 28;
-const DOT_MAX_R = R - 52;
+const LETTER_R = R - 24;
+const RELEASE_R = LETTER_R - 30;
+const GESTURE_R = LETTER_R;
+const DOT_MAX_R = R - 56;
 /** Радиус мини-кластера превью вокруг кардинальной буквы */
-const PREVIEW_CLUSTER_R = 17;
+const PREVIEW_CLUSTER_R = 22;
 
 interface StickPadProps {
   title: string;
@@ -86,6 +88,10 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
   );
 }
 
+function subRadius(sub: number): number {
+  return sub === 0 ? RELEASE_R : GESTURE_R;
+}
+
 function renderLetter(
   key: number,
   char: string,
@@ -115,11 +121,11 @@ function renderLockedGroup(
     const slot = locked * 5 + sub;
     const char = mapping[slot];
     if (!char) return null;
-    const { x, y } = polarToXY(subSlotAngle(lockedAngle, sub), LETTER_R);
+    const { x, y } = polarToXY(subSlotGestureAngle(lockedAngle, sub), subRadius(sub));
     const active =
       phase === 'committed' && hoverSub === sub ? false : hoverSub === sub;
     return renderLetter(slot, char, x, y, [
-      sub === 0 ? 'stick-pad__letter--release' : '',
+      sub === 0 ? 'stick-pad__letter--release' : 'stick-pad__letter--gesture',
       active ? 'stick-pad__letter--active' : '',
     ]);
   }).filter(Boolean);
@@ -154,7 +160,7 @@ function renderIdleGroups(
       if (!char) continue;
 
       const { x: ox, y: oy } = polarToXY(
-        subSlotAngle(baseAngle, sub),
+        subSlotGestureAngle(baseAngle, sub),
         PREVIEW_CLUSTER_R,
       );
       const subActive = groupActive && hoverSubPreview === sub;

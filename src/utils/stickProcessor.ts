@@ -29,7 +29,7 @@ export class StickProcessor {
     const minHoldMs = this.options.minHoldMs ?? 80;
 
     if (this.wasActive && !sample.active) {
-      // Release (базовый слот) только если направление зафиксировали, но жеста не было
+      // Release (sub 0) при отпускании, если главная буква ещё не зафиксирована жестом
       const release =
         this.phase === 'direction_locked' &&
         this.lockedDirectionIndex !== null &&

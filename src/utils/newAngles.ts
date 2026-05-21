@@ -1,8 +1,11 @@
 import type { RawStick, StickSample } from '../types';
 
+import { SUB_SLOT_OFFSET, SUB_SLOT_SECTOR } from './stickLayout';
+
 export const CARDINAL_ANGLES = [0, 90, 180, 270] as const;
-export const ANGLE_SECTOR    = 22.5; // ±22.5° на каждое направление
-export const CARDINAL_SECTION_ANGLE_SECTOR    = 45; //
+/** Полуширина сектора sub-слота (= 66° / 2 = 33°) */
+export const ANGLE_SECTOR = SUB_SLOT_SECTOR;
+export const CARDINAL_SECTION_ANGLE_SECTOR = 45;
 
 /** Разница углов в диапазоне (−180, 180] */
 export function angleDiff(a: number, b: number): number {
@@ -26,18 +29,17 @@ export function getCardinalIndex(angle: number): number | null {
 
 /**
  * Sub-слот по отклонению угла от зафиксированного направления:
- *   0 — release (обрабатывается отдельно в StickProcessor)
- *   1 — +45°  (по часовой)
- *   2 — −45°  (против часовой)
- *   3 — +90°
- *   4 — −90°
+ *   0 — главная буква (±33°, как и остальные — полоса 66°)
+ *   1 — +66°   2 — −66°   3 — +132°   4 — −132°
  */
 export function getSubSlot(currentAngle: number, lockedAngle: number): number | null {
   const diff = angleDiff(currentAngle, lockedAngle);
-  if (Math.abs(diff -  45) <= ANGLE_SECTOR) return 1;
-  if (Math.abs(diff +  45) <= ANGLE_SECTOR) return 2;
-  if (Math.abs(diff -  90) <= ANGLE_SECTOR) return 3;
-  if (Math.abs(diff +  90) <= ANGLE_SECTOR) return 4;
+  if (Math.abs(diff) <= ANGLE_SECTOR) return 0;
+  for (const [sub, target] of Object.entries(SUB_SLOT_OFFSET)) {
+    if (Math.abs(diff - target) <= ANGLE_SECTOR) {
+      return Number(sub);
+    }
+  }
   return null;
 }
 
