@@ -37,6 +37,10 @@ export interface StickProcessorState {
   lockedDirectionAngle: number | null;
   lockTimestamp: number | null;
   magnitude: number;
+  /** После «назад» — противоположное направление (index+2) временно недоступно */
+  disabledDirectionIndex: number | null;
+  /** 0–1 прогресс удержания в зоне «назад», иначе null */
+  backHoldProgress: number | null;
 }
 
 /** Событие: стик выбрал слот */
@@ -100,4 +104,8 @@ export interface StickOptions {
   gestureThreshold?: number;
   /** Минимальное удержание перед регистрацией жеста, мс, default 80 */
   minHoldMs?: number;
+  /** Удержание в зоне «назад» для выхода в выбор направления, мс, default 200 */
+  backHoldMs?: number;
+  /** Блокировка противоположного направления после «назад», мс, default 500 */
+  disableDirectionMs?: number;
 }

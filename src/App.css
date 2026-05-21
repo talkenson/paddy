@@ -124,6 +124,28 @@
   font-size: 14px;
 }
 
+.stick-pad__letter--back {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.stick-pad__letter--back-holding {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.stick-pad__letter--disabled {
+  opacity: 0.28;
+}
+
+.stick-pad__back-progress {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 .stick-pad__letter--active {
   color: var(--accent);
   transform: translate(-50%, -50%) scale(1.15);

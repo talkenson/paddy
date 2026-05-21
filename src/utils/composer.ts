@@ -59,6 +59,15 @@ export class SyllableComposer {
     };
   }
 
+  onStickBack(stick: 'left' | 'right'): void {
+    if (stick === 'left') {
+      this.heldConsonant = null;
+      this.vowelFiredWhileHeld = false;
+    } else {
+      this.selectedVowel = null;
+    }
+  }
+
   reset(): void {
     this.heldConsonant = null;
     this.selectedVowel = null;
@@ -88,6 +97,11 @@ export class GamepadProcessor {
     const leftEvent = this.leftProcessor.process(leftSample);
     let leftSlottedThisTick = false;
 
+    if (this.leftProcessor.consumeBack()) {
+      this.leftActive = false;
+      this.composer.onStickBack('left');
+    }
+
     if (leftEvent) {
       leftSlottedThisTick = true;
       events.push({
@@ -110,6 +124,11 @@ export class GamepadProcessor {
     }
 
     const rightEvent = this.rightProcessor.process(rightSample);
+
+    if (this.rightProcessor.consumeBack()) {
+      this.rightActive = false;
+      this.composer.onStickBack('right');
+    }
 
     if (rightEvent) {
       events.push({

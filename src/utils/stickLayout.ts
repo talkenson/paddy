@@ -7,28 +7,33 @@ export function polarToXY(angleDeg: number, radius: number): { x: number; y: num
   };
 }
 
+/** Маркер зоны «назад» в getSubSlot (не слот маппинга) */
+export const SUB_SLOT_BACK = -1;
+
+export const BACK_OFFSET = 180;
+
 /**
- * Углы жестов (sub 1–4) от зафиксированного направления.
- * Используются и в StickProcessor/getSubSlot, и в UI.
- * Бывшие ±45° / ±90° → ~66° (60–72) и ~132° (120–144).
+ * Углы букв sub 1–4 от lock. Сектор каждого — 60° (±30°).
+ * «Назад» — отдельно на BACK_OFFSET (180°).
  */
 export const SUB_SLOT_OFFSET: Record<number, number> = {
-  1: 66,
-  2: -66,
-  3: 132,
-  4: -132,
+  1: 60,
+  2: -60,
+  3: 120,
+  4: -120,
 };
 
-/** Расстояние между соседними целями (0↔66, 66↔132) */
-export const SUB_SLOT_SPACING = 66;
-
-/** Полуширина сектора: каждый слот занимает SUB_SLOT_SPACING градусов */
+export const SUB_SLOT_SPACING = 60;
 export const SUB_SLOT_SECTOR = SUB_SLOT_SPACING / 2;
 
 export function subSlotGestureAngle(lockedAngle: number, subSlot: number): number {
   if (subSlot === 0) return (lockedAngle + 360) % 360;
   const offset = SUB_SLOT_OFFSET[subSlot] ?? 0;
   return (lockedAngle + offset + 360) % 360;
+}
+
+export function backGestureAngle(lockedAngle: number): number {
+  return (lockedAngle + BACK_OFFSET) % 360;
 }
 
 /** Слоты release для четырёх кардинальных направлений */

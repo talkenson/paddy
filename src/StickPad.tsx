@@ -3,6 +3,8 @@ import type { StickProcessorState, StickSample } from './types';
 import { CARDINAL_ANGLES, getCardinalIndex, getSubSlot } from './utils/newAngles';
 import {
   CARDINAL_RELEASE_SLOTS,
+  SUB_SLOT_BACK,
+  backGestureAngle,
   polarToXY,
   subSlotGestureAngle,
 } from './utils/stickLayout';
@@ -13,7 +15,6 @@ const LETTER_R = R - 24;
 const RELEASE_R = LETTER_R - 30;
 const GESTURE_R = LETTER_R;
 const DOT_MAX_R = R - 56;
-/** Радиус мини-кластера превью вокруг кардинальной буквы */
 const PREVIEW_CLUSTER_R = 22;
 
 interface StickPadProps {
@@ -30,6 +31,8 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
     locked !== null &&
     lockedAngle !== null &&
     (state.phase === 'direction_locked' || state.phase === 'committed');
+
+  const disabledDir = state.disabledDirectionIndex;
 
   const hoverCardinal =
     state.phase === 'idle' && sample.active
@@ -52,8 +55,15 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
       : null;
 
   const letters: ReactNode[] = showSubSlots
-    ? renderLockedGroup(locked!, lockedAngle!, mapping, hoverSub, state.phase)
-    : renderIdleGroups(mapping, hoverCardinal, hoverSubPreview);
+    ? renderLockedGroup(
+        locked!,
+        lockedAngle!,
+        mapping,
+        hoverSub,
+        state.phase,
+        state.backHoldProgress,
+      )
+    : renderIdleGroups(mapping, hoverCardinal, hoverSubPreview, disabledDir);
 
   return (
     <div className="stick-pad">
@@ -74,6 +84,14 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
             style={{ transform: `rotate(${lockedAngle}deg)` }}
           />
         )}
+        {state.backHoldProgress !== null && (
+          <div
+            className="stick-pad__back-progress"
+            style={{
+              background: `conic-gradient(var(--accent) ${state.backHoldProgress * 360}deg, transparent 0)`,
+            }}
+          />
+        )}
         {letters}
         {dot && (
           <div
@@ -83,7 +101,10 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
         )}
         <div className="stick-pad__center" />
       </div>
-      <div className="stick-pad__phase">{phaseLabel(state.phase)} {(state.magnitude * 100).toFixed(0)}%</div>
+      <div className="stick-pad__phase">
+        {phaseLabel(state.phase)}
+        {state.backHoldProgress !== null && ' · назад'}
+      </div>
     </div>
   );
 }
@@ -93,7 +114,7 @@ function subRadius(sub: number): number {
 }
 
 function renderLetter(
-  key: number,
+  key: string | number,
   char: string,
   x: number,
   y: number,
@@ -116,25 +137,45 @@ function renderLockedGroup(
   mapping: Record<number, string | null>,
   hoverSub: number | null,
   phase: StickProcessorState['phase'],
+  backHoldProgress: number | null,
 ): ReactNode[] {
-  return Array.from({ length: 5 }, (_, sub) => {
+  const nodes: ReactNode[] = [];
+
+  for (let sub = 0; sub <= 4; sub++) {
     const slot = locked * 5 + sub;
     const char = mapping[slot];
-    if (!char) return null;
+    if (!char) continue;
+
     const { x, y } = polarToXY(subSlotGestureAngle(lockedAngle, sub), subRadius(sub));
     const active =
       phase === 'committed' && hoverSub === sub ? false : hoverSub === sub;
-    return renderLetter(slot, char, x, y, [
-      sub === 0 ? 'stick-pad__letter--release' : 'stick-pad__letter--gesture',
-      active ? 'stick-pad__letter--active' : '',
-    ]);
-  }).filter(Boolean);
+
+    nodes.push(
+      renderLetter(slot, char, x, y, [
+        sub === 0 ? 'stick-pad__letter--release' : 'stick-pad__letter--gesture',
+        active ? 'stick-pad__letter--active' : '',
+      ]),
+    );
+  }
+
+  const { x: bx, y: by } = polarToXY(backGestureAngle(lockedAngle), GESTURE_R);
+  const backActive = hoverSub === SUB_SLOT_BACK;
+  nodes.push(
+    renderLetter(`back-${locked}`, '←', bx, by, [
+      'stick-pad__letter--back',
+      backActive ? 'stick-pad__letter--active' : '',
+      backHoldProgress !== null ? 'stick-pad__letter--back-holding' : '',
+    ]),
+  );
+
+  return nodes;
 }
 
 function renderIdleGroups(
   mapping: Record<number, string | null>,
   hoverCardinal: number | null,
   hoverSubPreview: number | null,
+  disabledDir: number | null,
 ): ReactNode[] {
   const nodes: ReactNode[] = [];
 
@@ -142,6 +183,7 @@ function renderIdleGroups(
     const baseAngle = CARDINAL_ANGLES[dirIndex];
     const baseSlot = dirIndex * 5;
     const groupActive = hoverCardinal === dirIndex;
+    const isDisabled = dirIndex === disabledDir;
     const { x: mx, y: my } = polarToXY(baseAngle, LETTER_R);
 
     const release = mapping[releaseSlot];
@@ -149,7 +191,8 @@ function renderIdleGroups(
       nodes.push(
         renderLetter(releaseSlot, release, mx, my, [
           'stick-pad__letter--cardinal',
-          groupActive ? 'stick-pad__letter--active' : '',
+          isDisabled ? 'stick-pad__letter--disabled' : '',
+          groupActive && !isDisabled ? 'stick-pad__letter--active' : '',
         ]),
       );
     }
