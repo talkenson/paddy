@@ -2,11 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { CONSONANTS, VOWELS } from './mappings';
 import { StickPad } from './StickPad';
+import { TimingControls } from './TimingControls';
 import { useController } from './useController';
+import {
+  loadStickTimingOptions,
+  saveStickTimingOptions,
+  type StickTimingOptions,
+} from './stickOptions';
 import { ButtonMap } from './utils/buttonMap';
 
 function App() {
-  const [string, setString] = useState('')
+  const [string, setString] = useState('');
+  const [timing, setTiming] = useState<StickTimingOptions>(loadStickTimingOptions);
 
   const addChars = useCallback((chars: string[]) => {
     setString(prev => (prev + chars.join('')).trimStart())
@@ -14,8 +21,14 @@ function App() {
 
   const clear = useCallback(() => setString(''), [])
 
+  const updateTiming = useCallback((next: StickTimingOptions) => {
+    setTiming(next);
+    saveStickTimingOptions(next);
+  }, []);
+
   const { gamepad, currentState, tickResult } = useController({
-    addChars
+    addChars,
+    stickOptions: timing,
   });
 
   useEffect(() => {
@@ -53,6 +66,7 @@ function App() {
             <button type="button" onClick={clear}>
               Очистить
             </button>
+            <TimingControls options={timing} onChange={updateTiming} />
           </div>
         </div>
       ) : (

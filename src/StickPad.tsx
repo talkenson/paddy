@@ -101,9 +101,22 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
         )}
         <div className="stick-pad__center" />
       </div>
-      <div className="stick-pad__phase">
-        {phaseLabel(state.phase)}
-        {state.backHoldProgress !== null && ' · назад'}
+      <div className="stick-pad__footer">
+        <div className="stick-pad__phase">
+          {phaseLabel(state.phase)}
+          {state.backHoldProgress !== null && ' · назад'}
+        </div>
+        <div className="stick-pad__mag">
+          <span className="stick-pad__mag-label">
+            отклонение {(magPercent(sample, state) * 100).toFixed(0)}%
+          </span>
+          <div className="stick-pad__mag-bar" aria-hidden>
+            <div
+              className="stick-pad__mag-fill"
+              style={{ width: `${magPercent(sample, state) * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -219,6 +232,11 @@ function renderIdleGroups(
   });
 
   return nodes;
+}
+
+function magPercent(sample: StickSample, state: StickProcessorState): number {
+  const mag = sample.active ? sample.magnitude : state.magnitude;
+  return Math.min(Math.max(mag, 0), 1);
 }
 
 function phaseLabel(phase: StickProcessorState['phase']): string {

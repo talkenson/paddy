@@ -36,6 +36,10 @@ export class StickProcessor {
     this.options = options;
   }
 
+  setOptions(options: StickOptions): void {
+    this.options = { ...this.options, ...options };
+  }
+
   process(sample: StickSample): StickSlotEvent | null {
     const directionThreshold = this.options.directionThreshold ?? 0.6;
     const gestureThreshold = this.options.gestureThreshold ?? 0.92;

@@ -1,13 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGamepad } from './useGamepad';
-import type { GamepadUpdatePayload, TickResult } from './types';
+import type { StickOptions, GamepadUpdatePayload, TickResult } from './types';
 import { GamepadProcessor } from './utils/composer';
 
-export const useController = ({addChars}: {addChars: (chars: string[]) => void}) => {
+export const useController = ({
+  addChars,
+  stickOptions,
+}: {
+  addChars: (chars: string[]) => void;
+  stickOptions?: StickOptions;
+}) => {
   const { gamepad, onGamepadUpdate } = useGamepad();
   const processor = useRef(new GamepadProcessor());
   const [currentState, setCurrentState] = useState<GamepadUpdatePayload | null>(null);
   const [tickResult, setTickResult] = useState<TickResult | null>(null);
+
+  useEffect(() => {
+    if (stickOptions) {
+      processor.current.setStickOptions(stickOptions);
+    }
+  }, [stickOptions]);
 
   useEffect(() => {
     if (!gamepad) {
@@ -29,11 +41,11 @@ export const useController = ({addChars}: {addChars: (chars: string[]) => void})
         addChars(chars)
       }
 
-      
+
     });
 
     return unsub;
-  }, [gamepad, onGamepadUpdate]);
+  }, [gamepad, onGamepadUpdate, addChars]);
 
   return { gamepad, currentState, tickResult };
 };

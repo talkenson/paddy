@@ -1,5 +1,11 @@
 import { CONSONANTS, VOWELS } from '../mappings';
-import type { ComposerState, GamepadEvent, StickSample, TickResult } from '../types';
+import type {
+  ComposerState,
+  GamepadEvent,
+  StickOptions,
+  StickSample,
+  TickResult,
+} from '../types';
 import { ButtonMap } from './buttonMap';
 import { StickProcessor } from './stickProcessor';
 
@@ -103,6 +109,11 @@ export class GamepadProcessor {
   private leftActive = false;
   private rightActive = false;
   private lastButtonsState = 0b0;
+
+  setStickOptions(options: StickOptions): void {
+    this.leftProcessor.setOptions(options);
+    this.rightProcessor.setOptions(options);
+  }
 
   tick(leftSample: StickSample, rightSample: StickSample, buttonsState: number): TickResult {
     const events: GamepadEvent[] = [];
