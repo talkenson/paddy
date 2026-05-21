@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import './App.css';
+import { CONSONANTS, VOWELS } from './mappings';
+import { StickPad } from './StickPad';
 import { useController } from './useController';
 import { ButtonMap } from './utils/buttonMap';
 
@@ -17,36 +19,46 @@ function App() {
   });
 
   useEffect(() => {
-    if (currentState?.pressedButtons & ButtonMap.BTN_2) {
+    if ((currentState?.pressedButtons ?? 0) & ButtonMap.BTN_2) {
       clear()
     }
   }, [currentState, clear])
 
+  const leftState = tickResult?.state.left;
+  const rightState = tickResult?.state.right;
+
   return (
     <>
       {gamepad !== null ? (
-        <div className="col">
-          <div>Connected: {gamepad.id}</div>
-          <div className="col">
-            <span>
-              L: {currentState?.lSample.angle.toFixed(0)}° mag{' '}
-              {currentState?.lSample.magnitude.toFixed(1)}{' '}
-              {currentState?.lSample.active ? '●' : '○'}
-            </span>
-            <span>
-              R: {currentState?.rSample.angle.toFixed(0)}° mag{' '}
-              {currentState?.rSample.magnitude.toFixed(1)}{' '}
-              {currentState?.rSample.active ? '●' : '○'}
-            </span>
+        <div className="app-layout">
+          {currentState && leftState && (
+            <StickPad
+              title="Согласные"
+              sample={currentState.lSample}
+              state={leftState}
+              mapping={CONSONANTS}
+            />
+          )}
+          {currentState && rightState && (
+            <StickPad
+              title="Гласные"
+              sample={currentState.rSample}
+              state={rightState}
+              mapping={VOWELS}
+            />
+          )}
+          <div className="text-panel">
+            <div style={{ fontSize: 13, opacity: 0.75 }}>{gamepad.id}</div>
+            <input value={string} readOnly aria-label="Введённый текст" />
+            <button type="button" onClick={clear}>
+              Очистить
+            </button>
           </div>
-          <div>
-            Phase: L={tickResult?.state.left.phase} R={tickResult?.state.right.phase}
-          </div>
-          <div>Text: <input value={string} readOnly/></div>
-          <button onClick={clear}>Clear</button>
         </div>
       ) : (
-        <div>No gamepad found, press button or check connectivity</div>
+        <div style={{ padding: 24 }}>
+          Подключите геймпад и нажмите любую кнопку
+        </div>
       )}
     </>
   );

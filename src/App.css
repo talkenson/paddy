@@ -1,4 +1,150 @@
 .col {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.app-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+}
+
+.stick-pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stick-pad__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.stick-pad__circle {
+  position: relative;
+  border-radius: 50%;
+}
+
+.stick-pad__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--code-bg);
+  pointer-events: none;
+}
+
+.stick-pad__circle--locked .stick-pad__ring {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.stick-pad__lock-wedge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 42%;
+  margin-left: -1px;
+  margin-top: -42%;
+  background: var(--accent);
+  opacity: 0.35;
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+.stick-pad__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--border);
+  pointer-events: none;
+}
+
+.stick-pad__dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: var(--shadow);
+  z-index: 2;
+  transition: left 40ms linear, top 40ms linear;
+}
+
+.stick-pad__letter {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  user-select: none;
+  z-index: 1;
+  transition: color 0.12s, transform 0.12s;
+}
+
+.stick-pad__letter--cardinal {
+  font-size: 18px;
+}
+
+.stick-pad__letter--preview {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.38;
+  z-index: 0;
+}
+
+.stick-pad__letter--preview-visible {
+  opacity: 0.62;
+}
+
+.stick-pad__letter--preview.stick-pad__letter--active {
+  opacity: 1;
+  font-size: 12px;
+}
+
+.stick-pad__letter--release {
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.stick-pad__letter--active {
+  color: var(--accent);
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.stick-pad__phase {
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.text-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.text-panel input {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 10px;
+  font-size: 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
 }
