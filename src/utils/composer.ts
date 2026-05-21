@@ -59,13 +59,25 @@ export class SyllableComposer {
     };
   }
 
-  /** BTN_7 — допечатать согласную, не отпуская левый стик (П → submit → Р + И) */
-  submitHeldConsonant(): string | null {
-    if (!this.heldConsonant || this.vowelFiredWhileHeld) return null;
-    const text = this.heldConsonant;
-    this.heldConsonant = null;
-    this.vowelFiredWhileHeld = false;
-    return text;
+  /**
+   * BTN_7 — сабмит без отпускания стика.
+   * Есть гласная → слог (РИ); иначе только согласная (П).
+   */
+  submitFromButton(): string | null {
+    if (this.selectedVowel) {
+      const text = (this.heldConsonant ?? '') + this.selectedVowel;
+      this.selectedVowel = null;
+      this.heldConsonant = null;
+      this.vowelFiredWhileHeld = true;
+      return text;
+    }
+    if (this.heldConsonant && !this.vowelFiredWhileHeld) {
+      const text = this.heldConsonant;
+      this.heldConsonant = null;
+      this.vowelFiredWhileHeld = false;
+      return text;
+    }
+    return null;
   }
 
   onStickBack(stick: 'left' | 'right'): void {
@@ -132,12 +144,9 @@ export class GamepadProcessor {
       this.leftActive = false;
     }
 
-    if (pressed & ButtonMap.BTN_7 && !leftSlottedThisTick) {
-      const text = this.composer.submitHeldConsonant();
-      if (text) events.push({ type: 'char', text });
-    }
-
     const rightEvent = this.rightProcessor.process(rightSample);
+    let rightSlottedThisTick = false;
+    const btn7Held = !!(buttonsState & ButtonMap.BTN_7);
 
     if (this.rightProcessor.consumeBack()) {
       this.rightActive = false;
@@ -145,6 +154,7 @@ export class GamepadProcessor {
     }
 
     if (rightEvent) {
+      rightSlottedThisTick = true;
       events.push({
         type: 'slot_fired',
         stick: 'right',
@@ -152,15 +162,30 @@ export class GamepadProcessor {
         directionIndex: rightEvent.directionIndex,
         subSlot: rightEvent.subSlot,
       });
-      const text = this.composer.onRight({ type: 'slot', slot: rightEvent.slot });
-      if (text) events.push({ type: 'char', text });
+      this.composer.onRight({ type: 'slot', slot: rightEvent.slot });
       this.rightActive = true;
     }
 
-    // Правый: коммит при отпускании (в т.ч. в тике slot — иначе гласная не допечатается)
-    if (this.rightActive && !rightSample.active) {
-      const text = this.composer.onRight({ type: 'neutral' });
+    const tryBtn7Submit = () => {
+      const text = this.composer.submitFromButton();
       if (text) events.push({ type: 'char', text });
+    };
+
+    // Нажатие: П, или РИ если гласная уже выбрана
+    if ((pressed & ButtonMap.BTN_7) && !leftSlottedThisTick && !rightSlottedThisTick) {
+      tryBtn7Submit();
+    }
+    // Удержание + новая гласная → допечатать (РИ, потом ещё А, Е…)
+    if (btn7Held && rightSlottedThisTick) {
+      tryBtn7Submit();
+    }
+
+    // Правый: коммит при отпускании, если BTN_7 не удерживают
+    if (this.rightActive && !rightSample.active) {
+      if (!btn7Held) {
+        const text = this.composer.onRight({ type: 'neutral' });
+        if (text) events.push({ type: 'char', text });
+      }
       this.rightActive = false;
     }
 
