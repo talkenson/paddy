@@ -7,10 +7,13 @@ type LeftEvent =
   | { type: 'slot'; slot: number }
   | { type: 'neutral' };
 
-type RightEvent = { type: 'slot'; slot: number };
+type RightEvent =
+  | { type: 'slot'; slot: number }
+  | { type: 'neutral' };
 
 export class SyllableComposer {
   private heldConsonant: string | null = null;
+  private selectedVowel: string | null = null;
   private vowelFiredWhileHeld = false;
 
   onLeft(event: LeftEvent): string | null {
@@ -35,11 +38,18 @@ export class SyllableComposer {
   }
 
   onRight(event: RightEvent): string | null {
-    const vowel = VOWELS[event.slot];
-    if (!vowel) return null;
+    if (event.type === 'slot') {
+      const vowel = VOWELS[event.slot];
+      if (!vowel) return null;
+      this.selectedVowel = vowel;
+      return null;
+    }
 
+    if (!this.selectedVowel) return null;
+    const text = (this.heldConsonant ?? '') + this.selectedVowel;
+    this.selectedVowel = null;
     this.vowelFiredWhileHeld = true;
-    return (this.heldConsonant ?? '') + vowel;
+    return text;
   }
 
   getState(): ComposerState {
@@ -51,6 +61,7 @@ export class SyllableComposer {
 
   reset(): void {
     this.heldConsonant = null;
+    this.selectedVowel = null;
     this.vowelFiredWhileHeld = false;
   }
 }
@@ -60,6 +71,7 @@ export class GamepadProcessor {
   private rightProcessor = new StickProcessor();
   private composer = new SyllableComposer();
   private leftActive = false;
+  private rightActive = false;
   private lastButtonsState = 0b0;
 
   tick(leftSample: StickSample, rightSample: StickSample, buttonsState: number): TickResult {
@@ -109,6 +121,14 @@ export class GamepadProcessor {
       });
       const text = this.composer.onRight({ type: 'slot', slot: rightEvent.slot });
       if (text) events.push({ type: 'char', text });
+      this.rightActive = true;
+    }
+
+    // Правый: коммит при отпускании (в т.ч. в тике slot — иначе гласная не допечатается)
+    if (this.rightActive && !rightSample.active) {
+      const text = this.composer.onRight({ type: 'neutral' });
+      if (text) events.push({ type: 'char', text });
+      this.rightActive = false;
     }
 
     return {
@@ -126,5 +146,6 @@ export class GamepadProcessor {
     this.rightProcessor.reset();
     this.composer.reset();
     this.leftActive = false;
+    this.rightActive = false;
   }
 }
