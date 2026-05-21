@@ -59,6 +59,15 @@ export class SyllableComposer {
     };
   }
 
+  /** BTN_7 — допечатать согласную, не отпуская левый стик (П → submit → Р + И) */
+  submitHeldConsonant(): string | null {
+    if (!this.heldConsonant || this.vowelFiredWhileHeld) return null;
+    const text = this.heldConsonant;
+    this.heldConsonant = null;
+    this.vowelFiredWhileHeld = false;
+    return text;
+  }
+
   onStickBack(stick: 'left' | 'right'): void {
     if (stick === 'left') {
       this.heldConsonant = null;
@@ -121,6 +130,11 @@ export class GamepadProcessor {
       const text = this.composer.onLeft({ type: 'neutral' });
       if (text) events.push({ type: 'char', text });
       this.leftActive = false;
+    }
+
+    if (pressed & ButtonMap.BTN_7 && !leftSlottedThisTick) {
+      const text = this.composer.submitHeldConsonant();
+      if (text) events.push({ type: 'char', text });
     }
 
     const rightEvent = this.rightProcessor.process(rightSample);
