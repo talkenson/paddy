@@ -28,6 +28,8 @@ export const useController = ({addChars}: {addChars: (chars: string[]) => void})
       if (chars.length > 0) {
         addChars(chars)
       }
+
+      
     });
 
     return unsub;

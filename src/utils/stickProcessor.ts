@@ -24,8 +24,8 @@ export class StickProcessor {
   }
 
   process(sample: StickSample): StickSlotEvent | null {
-    const directionThreshold = this.options.directionThreshold ?? 0.4;
-    const gestureThreshold = this.options.gestureThreshold ?? 0.9;
+    const directionThreshold = this.options.directionThreshold ?? 0.6;
+    const gestureThreshold = this.options.gestureThreshold ?? 0.92;
     const minHoldMs = this.options.minHoldMs ?? 80;
 
     if (this.wasActive && !sample.active) {

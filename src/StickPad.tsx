@@ -83,7 +83,7 @@ export function StickPad({ title, sample, state, mapping }: StickPadProps) {
         )}
         <div className="stick-pad__center" />
       </div>
-      <div className="stick-pad__phase">{phaseLabel(state.phase)}</div>
+      <div className="stick-pad__phase">{phaseLabel(state.phase)} {(state.magnitude * 100).toFixed(0)}%</div>
     </div>
   );
 }
