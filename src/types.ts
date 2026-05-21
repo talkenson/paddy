@@ -1,10 +1,9 @@
-import type { StickResult } from './utils/getStickAngle';
-
 export type GamepadUpdatePayload = Gamepad & {
   l: [number, number];
   r: [number, number];
-  lAngle: StickResult;
-  rAngle: StickResult;
+  lSample: StickSample;
+  rSample: StickSample;
+  pressedButtons: number;
 };
 
 export type GamepadUpdateFunction = (gamepad: GamepadUpdatePayload) => void;

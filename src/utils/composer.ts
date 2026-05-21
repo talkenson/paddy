@@ -1,124 +1,127 @@
-// ---- types ----
+import { CONSONANTS, VOWELS } from '../mappings';
+import type { ComposerState, GamepadEvent, StickSample, TickResult } from '../types';
+import { ButtonMap } from './buttonMap';
+import { StickProcessor } from './stickProcessor';
 
-interface SlotEvent {
-    slot: number;
-    directionIndex: number;
-    subSlot: number;
-  }
-  
-  type LeftEvent =
-    | { type: 'slot'; slot: number }
-    | { type: 'neutral' };               // вернулся в нейтраль
-  
-  type RightEvent =
-    | { type: 'slot'; slot: number };
-  
-  interface SyllableOutput {
-    text: string;                         // "ПА", "Р", "О" и т.д.
-  }
-  
-  // ---- mapping (пример, расставишь сам) ----
-  
-  const CONSONANTS: Record<number, string> = {
-    0:  'П',  1: 'Б',  2: 'В',  3: 'Ф',  4: 'М',   // UP
-    5:  'Т',  6: 'Д',  7: 'С',  8: 'З',  9: 'Н',   // RIGHT
-    10: 'К', 11: 'Г', 12: 'Х', 13: 'Ш', 14: 'Ж',   // DOWN
-    15: 'Р', 16: 'Л', 17: 'Ч', 18: 'Щ', 19: 'Ц',   // LEFT
-  };
-  
-  const VOWELS: Record<number, string> = {
-    0:  'А',  1: 'Я',  2: 'Э',  3: 'Е',  4: 'Ы',   // UP
-    5:  'И',  6: 'Й',  7: 'О',  8: 'Ё',  9: 'У',   // RIGHT
-    10: 'Ю', 11: 'Ь',                                // DOWN (остальные слоты — символы/пунктуация)
-  };
-  
-  // ---- composer ----
-  
-  export class SyllableComposer {
-    private heldConsonant: string | null = null;
-    private vowelFiredWhileHeld = false;
-  
-    onLeft(event: LeftEvent): SyllableOutput | null {
-      if (event.type === 'slot') {
-        // Фиксируем новую согласную, сбрасываем флаг
-        this.heldConsonant = CONSONANTS[event.slot] ?? null;
-        this.vowelFiredWhileHeld = false;
-        return null;
-      }
-  
-      if (event.type === 'neutral') {
-        // Левый вернулся в нейтраль
-        if (this.heldConsonant && !this.vowelFiredWhileHeld) {
-          // Голая согласная — гласная так и не пришла
-          const text = this.heldConsonant;
-          this.heldConsonant = null;
-          return { text };
-        }
-        this.heldConsonant = null;
-        this.vowelFiredWhileHeld = false;
-        return null;
-      }
-  
+type LeftEvent =
+  | { type: 'slot'; slot: number }
+  | { type: 'neutral' };
+
+type RightEvent = { type: 'slot'; slot: number };
+
+export class SyllableComposer {
+  private heldConsonant: string | null = null;
+  private vowelFiredWhileHeld = false;
+
+  onLeft(event: LeftEvent): string | null {
+    if (event.type === 'slot') {
+      this.heldConsonant = CONSONANTS[event.slot] ?? null;
+      this.vowelFiredWhileHeld = false;
       return null;
     }
-  
-    onRight(event: RightEvent): SyllableOutput | null {
-      const vowel = VOWELS[event.slot];
-      if (!vowel) return null;
-  
-      this.vowelFiredWhileHeld = true;
-      const text = (this.heldConsonant ?? '') + vowel;
-      // Согласная остаётся — можно сразу бить следующую гласную
-      return { text };
+
+    if (event.type === 'neutral') {
+      if (this.heldConsonant && !this.vowelFiredWhileHeld) {
+        const text = this.heldConsonant;
+        this.heldConsonant = null;
+        return text;
+      }
+      this.heldConsonant = null;
+      this.vowelFiredWhileHeld = false;
+      return null;
     }
+
+    return null;
   }
-  
-  // ---- координатор двух стиков ----
-  
-  export class GamepadInputSystem {
-    private leftProcessor  = new StickInputProcessor();
-    private rightProcessor = new StickInputProcessor();
-    private composer       = new SyllableComposer();
-  
-    private leftActive = false; // отслеживаем переход в нейтраль
-  
-    tick(
-      leftSample: StickSample,
-      rightSample: StickSample,
-    ): SyllableOutput[] {
-      const out: SyllableOutput[] = [];
-  
-      // --- левый стик ---
-      const leftEvent = this.leftProcessor.process(leftSample);
-  
-      if (leftEvent) {
-        const result = this.composer.onLeft({ type: 'slot', slot: leftEvent.slot });
-        if (result) out.push(result);
-        this.leftActive = true;
-      }
-  
-      // Детектим возврат левого в нейтраль
-      if (this.leftActive && !leftSample.active) {
-        const result = this.composer.onLeft({ type: 'neutral' });
-        if (result) out.push(result);
-        this.leftActive = false;
-      }
-  
-      // --- правый стик ---
-      const rightEvent = this.rightProcessor.process(rightSample);
-  
-      if (rightEvent) {
-        const result = this.composer.onRight({ type: 'slot', slot: rightEvent.slot });
-        if (result) out.push(result);
-      }
-  
-      return out;
+
+  onRight(event: RightEvent): string | null {
+    const vowel = VOWELS[event.slot];
+    if (!vowel) return null;
+
+    this.vowelFiredWhileHeld = true;
+    return (this.heldConsonant ?? '') + vowel;
+  }
+
+  getState(): ComposerState {
+    return {
+      heldConsonant: this.heldConsonant,
+      vowelFiredWhileHeld: this.vowelFiredWhileHeld,
+    };
+  }
+
+  reset(): void {
+    this.heldConsonant = null;
+    this.vowelFiredWhileHeld = false;
+  }
+}
+
+export class GamepadProcessor {
+  private leftProcessor = new StickProcessor();
+  private rightProcessor = new StickProcessor();
+  private composer = new SyllableComposer();
+  private leftActive = false;
+  private lastButtonsState = 0b0;
+
+  tick(leftSample: StickSample, rightSample: StickSample, buttonsState: number): TickResult {
+    const events: GamepadEvent[] = [];
+
+    const pressed = (~this.lastButtonsState) & buttonsState; 
+    // const released = this.lastButtonsState & (~buttonsState);
+    this.lastButtonsState = buttonsState;
+
+    if (pressed & ButtonMap.BTN_0) {
+      events.push({ type: 'char', text: ' ' })
     }
-  
-    reset(): void {
-      this.leftProcessor.reset();
-      this.rightProcessor.reset();
-      this.composer = new SyllableComposer();
+
+    const leftEvent = this.leftProcessor.process(leftSample);
+
+    if (leftEvent) {
+      events.push({
+        type: 'slot_fired',
+        stick: 'left',
+        slot: leftEvent.slot,
+        directionIndex: leftEvent.directionIndex,
+        subSlot: leftEvent.subSlot,
+      });
+      const text = this.composer.onLeft({ type: 'slot', slot: leftEvent.slot });
+      if (text) events.push({ type: 'char', text });
+      this.leftActive = true;
+    }
+
+    if (this.leftActive && !leftSample.active) {
+      const text = this.composer.onLeft({ type: 'neutral' });
+      if (text) events.push({ type: 'char', text });
       this.leftActive = false;
     }
+
+    const rightEvent = this.rightProcessor.process(rightSample);
+
+    if (rightEvent) {
+      events.push({
+        type: 'slot_fired',
+        stick: 'right',
+        slot: rightEvent.slot,
+        directionIndex: rightEvent.directionIndex,
+        subSlot: rightEvent.subSlot,
+      });
+      const text = this.composer.onRight({ type: 'slot', slot: rightEvent.slot });
+      if (text) events.push({ type: 'char', text });
+    }
+
+    return {
+      events,
+      state: {
+        left: this.leftProcessor.getState(),
+        right: this.rightProcessor.getState(),
+        composer: this.composer.getState(),
+      },
+    };
   }
+
+  reset(): void {
+    this.leftProcessor.reset();
+    this.rightProcessor.reset();
+    this.composer.reset();
+    this.leftActive = false;
+  }
+}

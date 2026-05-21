@@ -1,7 +1,8 @@
-import type { RawStick, StickSample } from './types';
+import type { RawStick, StickSample } from '../types';
 
 export const CARDINAL_ANGLES = [0, 90, 180, 270] as const;
 export const ANGLE_SECTOR    = 22.5; // ±22.5° на каждое направление
+export const CARDINAL_SECTION_ANGLE_SECTOR    = 45; //
 
 /** Разница углов в диапазоне (−180, 180] */
 export function angleDiff(a: number, b: number): number {
@@ -16,7 +17,7 @@ export function angleDiff(a: number, b: number): number {
  */
 export function getCardinalIndex(angle: number): number | null {
   for (let i = 0; i < CARDINAL_ANGLES.length; i++) {
-    if (Math.abs(angleDiff(angle, CARDINAL_ANGLES[i])) <= ANGLE_SECTOR) {
+    if (Math.abs(angleDiff(angle, CARDINAL_ANGLES[i])) <= CARDINAL_SECTION_ANGLE_SECTOR) {
       return i;
     }
   }
@@ -44,7 +45,7 @@ export function getSubSlot(currentAngle: number, lockedAngle: number): number | 
  * Преобразует сырые x/y в нормализованный сэмпл.
  * Убирает мёртвую зону, растягивает [deadZone..1] → [0..1], обрезает до 1.
  */
-export function normalizeStick(raw: RawStick, deadZone = 0.12): StickSample {
+export function normalizeStick(raw: RawStick, deadZone = 0.55): StickSample {
   const rawMag = Math.sqrt(raw.x * raw.x + raw.y * raw.y);
 
   if (rawMag < deadZone) {
